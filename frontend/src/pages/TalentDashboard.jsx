@@ -435,7 +435,7 @@ export default function TalentDashboard() {
                     <Label className="text-sm font-medium">Experience Level</Label>
                     {editingProfile ? (
                       <Select 
-                        value={profile.experience_level || ''} 
+                        value={profile.experience_level || undefined} 
                         onValueChange={(value) => setProfile({ ...profile, experience_level: value })}
                       >
                         <SelectTrigger className="rounded-sm" data-testid="profile-experience-select">
@@ -542,7 +542,7 @@ export default function TalentDashboard() {
                     <Label className="text-sm font-medium">Availability</Label>
                     {editingProfile ? (
                       <Select 
-                        value={profile.availability || 'Available'} 
+                        value={profile.availability || "Available"} 
                         onValueChange={(value) => setProfile({ ...profile, availability: value })}
                       >
                         <SelectTrigger className="rounded-sm">
