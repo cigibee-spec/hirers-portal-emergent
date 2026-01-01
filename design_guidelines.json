@@ -1,0 +1,165 @@
+{
+  "identity": {
+    "name": "BuildForce",
+    "archetype": "Industrial Precision",
+    "vibe": "Reliable, Robust, Technical, Efficient",
+    "core_metaphor": "The Digital Blueprint"
+  },
+  "typography": {
+    "primary_font": "Manrope",
+    "secondary_font": "IBM Plex Sans",
+    "mono_font": "JetBrains Mono",
+    "usage": {
+      "headings": "Manrope, font-bold, tracking-tight",
+      "body": "IBM Plex Sans, font-normal, leading-relaxed",
+      "ui_labels": "IBM Plex Sans, font-medium, tracking-wide, uppercase",
+      "data_values": "JetBrains Mono, font-medium"
+    }
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "name": "Safety Orange",
+        "hex": "#F97316",
+        "tailwind": "orange-500",
+        "usage": "Primary CTAs, Active States, Highlights"
+      },
+      "secondary": {
+        "name": "Blueprint Navy",
+        "hex": "#0F172A",
+        "tailwind": "slate-900",
+        "usage": "Headers, Footers, Primary Text"
+      },
+      "background": {
+        "name": "Concrete White",
+        "hex": "#F8FAFC",
+        "tailwind": "slate-50",
+        "usage": "Page Backgrounds"
+      },
+      "surface": {
+        "name": "Sheetrock White",
+        "hex": "#FFFFFF",
+        "tailwind": "white",
+        "usage": "Cards, Modals, Inputs"
+      },
+      "accent": {
+        "name": "Caution Yellow",
+        "hex": "#FACC15",
+        "tailwind": "yellow-400",
+        "usage": "Warnings, Badges, 'New' tags"
+      },
+      "border": {
+        "name": "Steel Grey",
+        "hex": "#E2E8F0",
+        "tailwind": "slate-200",
+        "usage": "Borders, Dividers"
+      }
+    },
+    "gradients": {
+      "hero_overlay": "linear-gradient(to bottom, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.95))",
+      "subtle_glow": "radial-gradient(circle at center, rgba(249, 115, 22, 0.15) 0%, transparent 70%)"
+    }
+  },
+  "visual_enhancers": {
+    "textures": {
+      "noise": "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E\")",
+      "grid": "linear-gradient(to right, #E2E8F0 1px, transparent 1px), linear-gradient(to bottom, #E2E8F0 1px, transparent 1px)"
+    },
+    "decorations": [
+      "Corner Brackets: Add absolute positioned borders at corners of cards to mimic camera viewfinders or CAD selection tools.",
+      "Technical Lines: Use 1px dashed lines for connecting related elements.",
+      "Data Points: Use small filled circles (w-2 h-2) to denote status or list items."
+    ],
+    "shadows": {
+      "card": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+      "hover": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05)",
+      "glow": "0 0 20px -5px rgba(249, 115, 22, 0.3)"
+    },
+    "border_radius": {
+      "default": "rounded-none",
+      "buttons": "rounded-sm",
+      "inputs": "rounded-sm",
+      "cards": "rounded-sm"
+    }
+  },
+  "layout_strategies": {
+    "landing_page": {
+      "grid_type": "Bento Grid (Mode A)",
+      "spacing": "Generous (p-8 to p-24)",
+      "alignment": "Asymmetrical"
+    },
+    "dashboard": {
+      "grid_type": "Control Room (Mode B)",
+      "spacing": "Dense (p-4 to p-6)",
+      "alignment": "Strict Grid"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-sm shadow-sm transition-all active:scale-95 uppercase tracking-wide text-sm px-6 py-3",
+      "secondary": "bg-slate-100 hover:bg-slate-200 text-slate-900 font-medium rounded-sm border border-slate-200 transition-all uppercase tracking-wide text-sm px-6 py-3",
+      "outline": "bg-transparent border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white font-bold rounded-sm transition-all uppercase tracking-wide text-sm px-6 py-3"
+    },
+    "cards": {
+      "base": "bg-white border border-slate-200 rounded-sm p-6 relative overflow-hidden group hover:border-orange-500/50 transition-colors",
+      "feature": "bg-slate-50 border border-slate-200 p-8 rounded-sm hover:shadow-lg transition-all duration-300"
+    },
+    "inputs": {
+      "base": "bg-white border border-slate-300 rounded-sm px-4 py-3 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-slate-400"
+    }
+  },
+  "image_urls": {
+    "hero": {
+      "url": "https://images.unsplash.com/photo-1760449867527-26d7d732f88e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjBjb25zdHJ1Y3Rpb24lMjBzaXRlJTIwc2t5bGluZXxlbnwwfHx8fDE3NjcyODM5NjN8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Modern construction site with cranes at sunset",
+      "usage": "Landing page hero background with dark overlay"
+    },
+    "workers": [
+      {
+        "url": "https://images.unsplash.com/photo-1760025128820-1548e72b3cba?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzZ8MHwxfHNlYXJjaHwxfHxjb25zdHJ1Y3Rpb24lMjB3b3JrZXIlMjBwb3J0cmFpdCUyMHNhZmV0eSUyMGdlYXJ8ZW58MHx8fHwxNzY3MjgzOTYxfDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Female construction professional",
+        "usage": "Talent testimonials or profile examples"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1603516270950-26e4f5004ffd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzZ8MHwxfHNlYXJjaHwyfHxjb25zdHJ1Y3Rpb24lMjB3b3JrZXIlMjBwb3J0cmFpdCUyMHNhZmV0eSUyMGdlYXJ8ZW58MHx8fHwxNzY3MjgzOTYxfDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Construction worker in hard hat",
+        "usage": "Talent registration page"
+      }
+    ],
+    "planning": {
+      "url": "https://images.pexels.com/photos/9617893/pexels-photo-9617893.jpeg",
+      "alt": "Architect reviewing blueprints",
+      "usage": "Hirer/Company section or 'Post a Job' feature"
+    },
+    "placeholders": {
+      "logo": "https://via.placeholder.com/150?text=Company+Logo",
+      "avatar": "https://via.placeholder.com/150?text=User"
+    }
+  },
+  "motion": {
+    "transitions": "transition-all duration-300 ease-out",
+    "hover_effects": "hover:-translate-y-1 hover:shadow-lg",
+    "page_load": "animate-in fade-in slide-in-from-bottom-4 duration-700"
+  },
+  "accessibility": {
+    "contrast_check": "Ensure Safety Orange text is only used on dark backgrounds. On white backgrounds, use Orange for buttons/borders only, not thin text.",
+    "focus_states": "focus:ring-2 focus:ring-offset-2 focus:ring-orange-500",
+    "reduced_motion": "respect-reduced-motion"
+  },
+  "instructions_to_main_agent": [
+    "1. INSTALL FONTS: Add '@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');' to index.css",
+    "2. CONFIGURE TAILWIND: Update tailwind.config.js to use the specific colors and fonts defined above.",
+    "3. OVERRIDE SHADCN: Modify ui/button.tsx, ui/card.tsx etc. to match the 'Industrial Precision' style (square corners, bold borders).",
+    "4. USE LUCIDE ICONS: Use 'HardHat', 'Hammer', 'Ruler', 'Blueprint', 'Truck', 'Users', 'Building2' icons heavily.",
+    "5. DATA-TESTID: Ensure every interactive element has a data-testid attribute (e.g., 'job-search-input', 'apply-now-btn').",
+    "6. NO ROUNDED CORNERS: Default to 'rounded-sm' or 'rounded-none' for that sharp, industrial look. Avoid 'rounded-xl' or 'rounded-full' except for user avatars.",
+    "7. USE SONNER: Implement toast notifications using the Sonner library."
+  ],
+  "universal_guidelines": [
+    "Do not use gradients for text.",
+    "Avoid 'Inter' font.",
+    "Use 2-3x more padding than usual.",
+    "Never use pure black (#000000).",
+    "Always add hover states."
+  ]
+}
