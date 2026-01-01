@@ -61,7 +61,7 @@ const PLANS = [
 ];
 
 export default function PricingPage() {
-  const { user, isAuthenticated, getAuthHeaders } = useAuth();
+  const { user, isAuthenticated, getAuthHeaders, checkAuth } = useAuth();
   const navigate = useNavigate();
   const [subscribing, setSubscribing] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -92,6 +92,8 @@ export default function PricingPage() {
       });
 
       if (response.ok) {
+        // Refresh user data to get updated subscription
+        await checkAuth();
         toast.success('Subscription activated successfully!');
         navigate('/hirer/dashboard');
       } else {
