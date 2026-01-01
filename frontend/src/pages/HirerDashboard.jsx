@@ -607,7 +607,7 @@ export default function HirerDashboard() {
                   <div>
                     <Label className="text-sm font-medium">Company Size</Label>
                     {editingProfile ? (
-                      <Select value={profile.company_size || ''} onValueChange={(value) => setProfile({ ...profile, company_size: value })}>
+                      <Select value={profile.company_size || undefined} onValueChange={(value) => setProfile({ ...profile, company_size: value })}>
                         <SelectTrigger className="rounded-sm">
                           <SelectValue placeholder="Select size" />
                         </SelectTrigger>
@@ -691,7 +691,7 @@ export default function HirerDashboard() {
               
               <div>
                 <Label className="text-sm font-medium">Category *</Label>
-                <Select value={jobForm.category} onValueChange={(value) => setJobForm({ ...jobForm, category: value })}>
+                <Select value={jobForm.category || undefined} onValueChange={(value) => setJobForm({ ...jobForm, category: value })}>
                   <SelectTrigger className="rounded-sm" data-testid="job-category-select">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -716,7 +716,7 @@ export default function HirerDashboard() {
 
               <div>
                 <Label className="text-sm font-medium">Employment Type *</Label>
-                <Select value={jobForm.employment_type} onValueChange={(value) => setJobForm({ ...jobForm, employment_type: value })}>
+                <Select value={jobForm.employment_type || undefined} onValueChange={(value) => setJobForm({ ...jobForm, employment_type: value })}>
                   <SelectTrigger className="rounded-sm">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
@@ -730,7 +730,7 @@ export default function HirerDashboard() {
 
               <div>
                 <Label className="text-sm font-medium">Experience Level *</Label>
-                <Select value={jobForm.experience_level} onValueChange={(value) => setJobForm({ ...jobForm, experience_level: value })}>
+                <Select value={jobForm.experience_level || undefined} onValueChange={(value) => setJobForm({ ...jobForm, experience_level: value })}>
                   <SelectTrigger className="rounded-sm">
                     <SelectValue placeholder="Select level" />
                   </SelectTrigger>

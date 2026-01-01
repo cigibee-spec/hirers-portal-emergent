@@ -290,12 +290,12 @@ export default function JobsPage() {
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700">Category</label>
-                    <Select value={category} onValueChange={setCategory}>
+                    <Select value={category || "all"} onValueChange={(v) => setCategory(v === "all" ? "" : v)}>
                       <SelectTrigger className="rounded-sm" data-testid="category-filter">
                         <SelectValue placeholder="All Categories" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Categories</SelectItem>
+                        <SelectItem value="all">All Categories</SelectItem>
                         {JOB_CATEGORIES.map(cat => (
                           <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                         ))}
@@ -305,12 +305,12 @@ export default function JobsPage() {
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700">Experience Level</label>
-                    <Select value={experienceLevel} onValueChange={setExperienceLevel}>
+                    <Select value={experienceLevel || "all"} onValueChange={(v) => setExperienceLevel(v === "all" ? "" : v)}>
                       <SelectTrigger className="rounded-sm" data-testid="experience-filter">
                         <SelectValue placeholder="Any Experience" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Any Experience</SelectItem>
+                        <SelectItem value="all">Any Experience</SelectItem>
                         {EXPERIENCE_LEVELS.map(level => (
                           <SelectItem key={level} value={level}>{level}</SelectItem>
                         ))}
@@ -320,12 +320,12 @@ export default function JobsPage() {
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700">Employment Type</label>
-                    <Select value={employmentType} onValueChange={setEmploymentType}>
+                    <Select value={employmentType || "all"} onValueChange={(v) => setEmploymentType(v === "all" ? "" : v)}>
                       <SelectTrigger className="rounded-sm" data-testid="employment-type-filter">
                         <SelectValue placeholder="Any Type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Any Type</SelectItem>
+                        <SelectItem value="all">Any Type</SelectItem>
                         {EMPLOYMENT_TYPES.map(type => (
                           <SelectItem key={type} value={type}>{type}</SelectItem>
                         ))}
