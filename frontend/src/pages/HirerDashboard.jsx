@@ -41,7 +41,7 @@ const EMPTY_JOB = {
 };
 
 export default function HirerDashboard() {
-  const { user, logout, getAuthHeaders, updateUser, switchUserType } = useAuth();
+  const { user, logout, getAuthHeaders, updateUser, switchUserType, checkAuth } = useAuth();
   const navigate = useNavigate();
   
   const [jobs, setJobs] = useState([]);
