@@ -474,7 +474,7 @@ async def create_job(job_data: JobCreate, current_user: dict = Depends(get_curre
     job_doc = {
         "job_id": job_id,
         **job_data.model_dump(),
-        "company_name": hirer_profile.get("company_name", current_user["name"]),
+        "company_name": hirer_profile.get("company_name") or current_user["name"],
         "company_logo": hirer_profile.get("company_logo"),
         "hirer_id": current_user["user_id"],
         "status": "active",
