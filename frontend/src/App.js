@@ -11,6 +11,10 @@ import TalentDashboard from "./pages/TalentDashboard";
 import HirerDashboard from "./pages/HirerDashboard";
 import ResumeBuilder from "./pages/ResumeBuilder";
 import PricingPage from "./pages/PricingPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
+import CompaniesPage from "./pages/CompaniesPage";
+import CompanyDetailPage from "./pages/CompanyDetailPage";
+import MessagesPage from "./pages/MessagesPage";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import "./App.css";
 
@@ -60,6 +64,9 @@ function AppRouter() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/payment/success" element={<PaymentSuccessPage />} />
+      <Route path="/companies" element={<CompaniesPage />} />
+      <Route path="/companies/:userId" element={<CompanyDetailPage />} />
       <Route path="/jobs" element={<JobsPage />} />
       <Route path="/jobs/:jobId" element={<JobDetailPage />} />
       <Route 
@@ -83,6 +90,14 @@ function AppRouter() {
         element={
           <ProtectedRoute allowedTypes={['hirer']}>
             <HirerDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/messages" 
+        element={
+          <ProtectedRoute>
+            <MessagesPage />
           </ProtectedRoute>
         } 
       />

@@ -7,8 +7,14 @@ import { toast } from 'sonner';
 import { API } from '../App';
 import { 
   HardHat, Check, Star, ArrowRight, Building2, Menu, X, 
-  Briefcase, Users, Shield, Clock, Zap
+  Briefcase, Users, Shield, Clock, Zap, CreditCard
 } from 'lucide-react';
+
+const PAYMENT_METHODS = [
+  { id: 'stripe', name: 'Stripe', icon: CreditCard, desc: 'Credit/Debit Card' },
+  { id: 'paypal', name: 'PayPal', icon: CreditCard, desc: 'PayPal Account' },
+  { id: 'paymongo', name: 'PayMongo', icon: CreditCard, desc: 'PayMongo' },
+];
 
 const PLANS = [
   {
@@ -65,6 +71,7 @@ export default function PricingPage() {
   const navigate = useNavigate();
   const [subscribing, setSubscribing] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('stripe');
 
   const handleSubscribe = async (planId) => {
     if (!isAuthenticated) {
@@ -81,27 +88,28 @@ export default function PricingPage() {
 
     setSubscribing(planId);
     try {
-      const response = await fetch(`${API}/subscriptions`, {
+      const originUrl = window.location.origin;
+      const response = await fetch(`${API}/payments/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeaders()
         },
         credentials: 'include',
-        body: JSON.stringify({ plan: planId })
+        body: JSON.stringify({ plan: planId, payment_method: paymentMethod, origin_url: originUrl })
       });
 
       if (response.ok) {
-        // Refresh user data to get updated subscription
-        await checkAuth();
-        toast.success('Subscription activated successfully!');
-        navigate('/hirer/dashboard');
+        const data = await response.json();
+        if (data.url) {
+          window.location.href = data.url;
+        }
       } else {
         const error = await response.json();
-        toast.error(error.detail || 'Failed to subscribe');
+        toast.error(error.detail || 'Failed to start checkout');
       }
     } catch (error) {
-      toast.error('Failed to subscribe');
+      toast.error('Failed to start checkout');
     } finally {
       setSubscribing(null);
     }
@@ -215,9 +223,27 @@ export default function PricingPage() {
             <h2 className="font-heading text-2xl sm:text-3xl font-bold text-blueprint-navy mb-4">
               Simple, Transparent Pricing
             </h2>
-            <p className="text-slate-600">
+            <p className="text-slate-600 mb-6">
               No hidden fees. Cancel anytime.
             </p>
+            {/* Payment Method Selector */}
+            <div className="flex justify-center gap-3 flex-wrap" data-testid="payment-method-selector">
+              {PAYMENT_METHODS.map((pm) => (
+                <button
+                  key={pm.id}
+                  onClick={() => setPaymentMethod(pm.id)}
+                  className={`flex items-center gap-2 px-4 py-2 border rounded-sm transition-all text-sm font-medium ${
+                    paymentMethod === pm.id
+                      ? 'border-safety-orange bg-safety-orange/10 text-safety-orange'
+                      : 'border-steel-grey bg-white text-slate-600 hover:border-safety-orange/50'
+                  }`}
+                  data-testid={`payment-method-${pm.id}`}
+                >
+                  <pm.icon className="w-4 h-4" />
+                  {pm.name}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6 lg:gap-8">

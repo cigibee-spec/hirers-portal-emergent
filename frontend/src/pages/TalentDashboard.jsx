@@ -13,7 +13,8 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { 
   HardHat, User, FileText, Briefcase, Bookmark, Settings, LogOut,
-  MapPin, Mail, Phone, Edit, Save, X, ArrowRight, Building2, Clock, ChevronRight
+  MapPin, Mail, Phone, Edit, Save, X, ArrowRight, Building2, Clock, ChevronRight,
+  Upload, Download, Target, Bell, MessageSquare
 } from 'lucide-react';
 
 const JOB_CATEGORIES = [
@@ -33,6 +34,14 @@ export default function TalentDashboard() {
   const [loading, setLoading] = useState(true);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profile, setProfile] = useState(user?.talent_profile || {});
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState(null);
+  const [downloading, setDownloading] = useState(false);
+  const [matchedJobs, setMatchedJobs] = useState([]);
+  const [matchLoading, setMatchLoading] = useState(false);
+  const [alerts, setAlerts] = useState([]);
+  const [newAlert, setNewAlert] = useState({ categories: [], locations: [], keywords: [] });
+  const [alertKeyword, setAlertKeyword] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -97,6 +106,116 @@ export default function TalentDashboard() {
       navigate('/hirer/dashboard');
     } catch (error) {
       toast.error('Failed to switch account type');
+    }
+  };
+
+  const handleResumeUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API}/resumes/upload`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        credentials: 'include',
+        body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUploadResult(data);
+        toast.success(`Resume uploaded! ATS Score: ${data.ats_score}/100`);
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || 'Upload failed');
+      }
+    } catch (err) {
+      toast.error('Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    setDownloading(true);
+    try {
+      const res = await fetch(`${API}/resumes/download-pdf`, {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'resume.pdf';
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success('Resume downloaded!');
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || 'Download failed');
+      }
+    } catch (err) {
+      toast.error('Download failed');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const fetchMatchedJobs = async () => {
+    setMatchLoading(true);
+    try {
+      const res = await fetch(`${API}/ai/match-jobs`, {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
+      if (res.ok) setMatchedJobs(await res.json());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setMatchLoading(false);
+    }
+  };
+
+  const fetchAlerts = async () => {
+    try {
+      const res = await fetch(`${API}/job-alerts`, {
+        credentials: 'include', headers: getAuthHeaders()
+      });
+      if (res.ok) setAlerts(await res.json());
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const createAlert = async () => {
+    try {
+      const res = await fetch(`${API}/job-alerts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        credentials: 'include',
+        body: JSON.stringify(newAlert)
+      });
+      if (res.ok) {
+        toast.success('Job alert created!');
+        fetchAlerts();
+        setNewAlert({ categories: [], locations: [], keywords: [] });
+      }
+    } catch (err) {
+      toast.error('Failed to create alert');
+    }
+  };
+
+  const deleteAlert = async (alertId) => {
+    try {
+      await fetch(`${API}/job-alerts/${alertId}`, {
+        method: 'DELETE', credentials: 'include', headers: getAuthHeaders()
+      });
+      fetchAlerts();
+    } catch (err) {
+      toast.error('Failed to delete alert');
     }
   };
 
@@ -173,7 +292,7 @@ export default function TalentDashboard() {
               <p className="text-slate-600">Job Seeker Dashboard</p>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <Button 
               onClick={() => navigate('/talent/resume-builder')}
               className="bg-safety-orange hover:bg-safety-orange-dark text-white rounded-sm"
@@ -181,6 +300,25 @@ export default function TalentDashboard() {
             >
               <FileText className="w-4 h-4 mr-2" />
               Build Resume
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              className="rounded-sm"
+              data-testid="download-resume-btn"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {downloading ? 'Downloading...' : 'Download PDF'}
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => navigate('/messages')}
+              className="rounded-sm"
+              data-testid="messages-btn"
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Messages
             </Button>
             <Button 
               variant="outline" 
@@ -217,12 +355,21 @@ export default function TalentDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="applications" className="space-y-6">
-          <TabsList className="bg-white border border-steel-grey rounded-sm p-1">
+          <TabsList className="bg-white border border-steel-grey rounded-sm p-1 flex-wrap">
             <TabsTrigger value="applications" className="rounded-sm data-[state=active]:bg-safety-orange data-[state=active]:text-white">
               Applications
             </TabsTrigger>
             <TabsTrigger value="saved" className="rounded-sm data-[state=active]:bg-safety-orange data-[state=active]:text-white">
               Saved Jobs
+            </TabsTrigger>
+            <TabsTrigger value="resume" className="rounded-sm data-[state=active]:bg-safety-orange data-[state=active]:text-white">
+              Resume Upload
+            </TabsTrigger>
+            <TabsTrigger value="matching" className="rounded-sm data-[state=active]:bg-safety-orange data-[state=active]:text-white" onClick={fetchMatchedJobs}>
+              Job Matching
+            </TabsTrigger>
+            <TabsTrigger value="alerts" className="rounded-sm data-[state=active]:bg-safety-orange data-[state=active]:text-white" onClick={fetchAlerts}>
+              Alerts
             </TabsTrigger>
             <TabsTrigger value="profile" className="rounded-sm data-[state=active]:bg-safety-orange data-[state=active]:text-white">
               Profile
@@ -336,6 +483,216 @@ export default function TalentDashboard() {
                           }}
                         >
                           View Job
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Resume Upload Tab */}
+          <TabsContent value="resume">
+            <Card className="border border-steel-grey rounded-sm">
+              <CardHeader>
+                <CardTitle className="font-heading text-lg">Upload Resume for ATS Analysis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="max-w-lg">
+                  <p className="text-sm text-slate-600 mb-4">Upload your existing resume (PDF or DOCX) to get an ATS compatibility score and suggestions.</p>
+                  <div className="border-2 border-dashed border-steel-grey rounded-sm p-8 text-center mb-4">
+                    <Upload className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+                    <label className="cursor-pointer">
+                      <span className="text-safety-orange font-medium hover:underline">Choose file</span>
+                      <span className="text-slate-500"> or drag and drop</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.docx"
+                        onChange={handleResumeUpload}
+                        className="hidden"
+                        data-testid="resume-upload-input"
+                      />
+                    </label>
+                    <p className="text-xs text-slate-400 mt-2">PDF or DOCX, max 10MB</p>
+                  </div>
+                  {uploading && (
+                    <div className="flex items-center gap-2 text-safety-orange">
+                      <div className="w-5 h-5 border-2 border-safety-orange border-t-transparent rounded-full animate-spin" />
+                      Analyzing resume...
+                    </div>
+                  )}
+                  {uploadResult && (
+                    <div className="mt-4 space-y-4" data-testid="upload-result">
+                      <div className="flex items-center gap-4">
+                        <div className="text-center">
+                          <div className={`text-3xl font-bold ${uploadResult.ats_score >= 70 ? 'text-green-600' : uploadResult.ats_score >= 40 ? 'text-yellow-600' : 'text-red-600'}`}>
+                            {uploadResult.ats_score}
+                          </div>
+                          <p className="text-xs text-slate-500">ATS Score</p>
+                        </div>
+                        <div className="flex-1">
+                          <div className="w-full bg-slate-200 rounded-full h-3">
+                            <div
+                              className={`h-3 rounded-full ${uploadResult.ats_score >= 70 ? 'bg-green-500' : uploadResult.ats_score >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                              style={{ width: `${uploadResult.ats_score}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      {uploadResult.ats_feedback && (
+                        <div className="space-y-2">
+                          <p className="font-medium text-sm text-blueprint-navy">ATS Feedback:</p>
+                          {uploadResult.ats_feedback.map((fb, i) => (
+                            <div key={i} className={`flex items-center gap-2 text-sm ${fb.passed ? 'text-green-700' : 'text-red-600'}`}>
+                              {fb.passed ? <span>+{fb.points}</span> : <span>0</span>}
+                              {fb.feedback}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {uploadResult.extracted_text_preview && (
+                        <div>
+                          <p className="font-medium text-sm text-blueprint-navy mb-1">Extracted Text Preview:</p>
+                          <p className="text-xs text-slate-500 bg-slate-50 p-3 rounded max-h-32 overflow-y-auto">{uploadResult.extracted_text_preview}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Job Matching Tab */}
+          <TabsContent value="matching">
+            <Card className="border border-steel-grey rounded-sm">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="font-heading text-lg">AI Job Matching</CardTitle>
+                <Button onClick={fetchMatchedJobs} disabled={matchLoading} variant="outline" className="rounded-sm" data-testid="refresh-match-btn">
+                  <Target className="w-4 h-4 mr-2" />
+                  {matchLoading ? 'Finding...' : 'Find Matches'}
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-slate-600 mb-4">Jobs matched based on your profile skills, categories, location, and experience level.</p>
+                {matchLoading ? (
+                  <div className="text-center py-8">
+                    <div className="w-10 h-10 border-4 border-safety-orange border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                    <p className="text-slate-500">Finding best matches...</p>
+                  </div>
+                ) : matchedJobs.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Target className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                    <p className="text-slate-500">Click "Find Matches" to discover jobs that fit your profile.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {matchedJobs.map((job) => (
+                      <div
+                        key={job.job_id}
+                        className="border border-steel-grey rounded-sm p-4 hover:border-safety-orange/50 cursor-pointer transition-all"
+                        onClick={() => navigate(`/jobs/${job.job_id}`)}
+                        data-testid={`match-job-${job.job_id}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h4 className="font-heading font-semibold text-blueprint-navy">{job.title}</h4>
+                            <p className="text-sm text-slate-500">{job.company_name} - {job.location}</p>
+                            {job.match_reasons?.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {job.match_reasons.map((r, i) => (
+                                  <Badge key={i} variant="outline" className="text-xs border-green-300 text-green-700 bg-green-50">{r}</Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-center flex-shrink-0">
+                            <div className={`text-lg font-bold ${job.match_score >= 70 ? 'text-green-600' : job.match_score >= 40 ? 'text-yellow-600' : 'text-slate-500'}`}>
+                              {job.match_score}%
+                            </div>
+                            <p className="text-xs text-slate-400">Match</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Alerts Tab */}
+          <TabsContent value="alerts">
+            <Card className="border border-steel-grey rounded-sm">
+              <CardHeader>
+                <CardTitle className="font-heading text-lg">Job Alerts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-6 p-4 bg-slate-50 rounded-sm">
+                  <p className="font-medium text-sm text-blueprint-navy mb-3">Create New Alert</p>
+                  <div className="grid sm:grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <Label className="text-xs">Category</Label>
+                      <Select onValueChange={(v) => setNewAlert(prev => ({ ...prev, categories: [...prev.categories, v] }))}>
+                        <SelectTrigger><SelectValue placeholder="Add category" /></SelectTrigger>
+                        <SelectContent>
+                          {JOB_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {newAlert.categories.map((c, i) => (
+                          <Badge key={i} variant="outline" className="text-xs cursor-pointer" onClick={() => setNewAlert(prev => ({ ...prev, categories: prev.categories.filter((_, idx) => idx !== i) }))}>
+                            {c} <X className="w-3 h-3 ml-1" />
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Keywords</Label>
+                      <div className="flex gap-1">
+                        <Input
+                          value={alertKeyword}
+                          onChange={(e) => setAlertKeyword(e.target.value)}
+                          placeholder="Add keyword"
+                          className="text-sm"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && alertKeyword.trim()) {
+                              setNewAlert(prev => ({ ...prev, keywords: [...prev.keywords, alertKeyword.trim()] }));
+                              setAlertKeyword('');
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {newAlert.keywords.map((k, i) => (
+                          <Badge key={i} variant="outline" className="text-xs cursor-pointer" onClick={() => setNewAlert(prev => ({ ...prev, keywords: prev.keywords.filter((_, idx) => idx !== i) }))}>
+                            {k} <X className="w-3 h-3 ml-1" />
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <Button onClick={createAlert} className="bg-safety-orange text-white rounded-sm text-sm" data-testid="create-alert-btn">
+                    <Bell className="w-4 h-4 mr-1" /> Create Alert
+                  </Button>
+                </div>
+
+                {alerts.length === 0 ? (
+                  <p className="text-slate-500 text-sm text-center py-4">No job alerts yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {alerts.map((alert) => (
+                      <div key={alert.alert_id} className="flex items-center justify-between border border-steel-grey rounded-sm p-3" data-testid={`alert-${alert.alert_id}`}>
+                        <div>
+                          <div className="flex flex-wrap gap-1">
+                            {alert.categories.map((c, i) => <Badge key={i} className="text-xs bg-blue-100 text-blue-800">{c}</Badge>)}
+                            {alert.keywords.map((k, i) => <Badge key={i} variant="outline" className="text-xs">{k}</Badge>)}
+                          </div>
+                          <p className="text-xs text-slate-400 mt-1">Created {new Date(alert.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => deleteAlert(alert.alert_id)}>
+                          <X className="w-4 h-4 text-red-500" />
                         </Button>
                       </div>
                     ))}

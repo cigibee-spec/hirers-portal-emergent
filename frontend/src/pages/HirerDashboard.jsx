@@ -14,7 +14,8 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { 
   HardHat, Plus, Briefcase, Users, FileText, Settings, LogOut,
-  Building2, MapPin, DollarSign, Clock, Edit, Trash2, Eye, CheckCircle, X, Save, ChevronRight
+  Building2, MapPin, DollarSign, Clock, Edit, Trash2, Eye, CheckCircle, X, Save, ChevronRight,
+  BarChart3, MessageSquare, TrendingUp
 } from 'lucide-react';
 
 const JOB_CATEGORIES = [
@@ -55,6 +56,8 @@ export default function HirerDashboard() {
   const [profile, setProfile] = useState(user?.hirer_profile || {});
   const [skillInput, setSkillInput] = useState('');
   const [benefitInput, setBenefitInput] = useState('');
+  const [analytics, setAnalytics] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   const subscription = user?.subscription;
   const hasActiveSubscription = subscription?.status === 'active';
@@ -233,6 +236,20 @@ export default function HirerDashboard() {
     }
   };
 
+  const fetchAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const res = await fetch(`${API}/analytics/hirer`, {
+        credentials: 'include', headers: getAuthHeaders()
+      });
+      if (res.ok) setAnalytics(await res.json());
+    } catch (err) {
+      console.error('Failed to fetch analytics:', err);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     await logout();
     navigate('/');
@@ -354,6 +371,15 @@ export default function HirerDashboard() {
             </Button>
             <Button 
               variant="outline" 
+              onClick={() => navigate('/messages')}
+              className="rounded-sm"
+              data-testid="hirer-messages-btn"
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Messages
+            </Button>
+            <Button 
+              variant="outline" 
               onClick={handleSwitchToTalent}
               className="rounded-sm"
             >
@@ -403,12 +429,15 @@ export default function HirerDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="jobs" className="space-y-6">
-          <TabsList className="bg-white border border-steel-grey rounded-sm p-1">
+          <TabsList className="bg-white border border-steel-grey rounded-sm p-1 flex-wrap">
             <TabsTrigger value="jobs" className="rounded-sm data-[state=active]:bg-safety-orange data-[state=active]:text-white">
               My Jobs
             </TabsTrigger>
             <TabsTrigger value="applications" className="rounded-sm data-[state=active]:bg-safety-orange data-[state=active]:text-white">
               Applications
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="rounded-sm data-[state=active]:bg-safety-orange data-[state=active]:text-white" onClick={fetchAnalytics}>
+              Analytics
             </TabsTrigger>
             <TabsTrigger value="company" className="rounded-sm data-[state=active]:bg-safety-orange data-[state=active]:text-white">
               Company Profile
@@ -540,6 +569,78 @@ export default function HirerDashboard() {
                         </div>
                       )
                     ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics">
+            <Card className="border border-steel-grey rounded-sm">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="font-heading text-lg flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" /> Hiring Analytics
+                </CardTitle>
+                <Button variant="outline" onClick={fetchAnalytics} disabled={analyticsLoading} className="rounded-sm" data-testid="refresh-analytics-btn">
+                  <TrendingUp className="w-4 h-4 mr-2" /> Refresh
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {analyticsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="w-10 h-10 border-4 border-safety-orange border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  </div>
+                ) : !analytics ? (
+                  <div className="text-center py-8">
+                    <BarChart3 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                    <p className="text-slate-500">Click Refresh to load analytics</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6" data-testid="analytics-data">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {[
+                        { label: 'Total Jobs', value: analytics.total_jobs, color: 'text-blue-600' },
+                        { label: 'Active Jobs', value: analytics.active_jobs, color: 'text-green-600' },
+                        { label: 'Total Applications', value: analytics.total_applications, color: 'text-safety-orange' },
+                        { label: 'Hired', value: analytics.hired, color: 'text-emerald-600' },
+                      ].map((s, i) => (
+                        <div key={i} className="bg-slate-50 rounded-sm p-4 text-center">
+                          <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                          <p className="text-xs text-slate-500 mt-1">{s.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div className="bg-yellow-50 rounded-sm p-4 text-center">
+                        <p className="text-xl font-bold text-yellow-600">{analytics.pending_applications}</p>
+                        <p className="text-xs text-slate-500">Pending Review</p>
+                      </div>
+                      <div className="bg-green-50 rounded-sm p-4 text-center">
+                        <p className="text-xl font-bold text-green-600">{analytics.shortlisted_applications}</p>
+                        <p className="text-xs text-slate-500">Shortlisted</p>
+                      </div>
+                      <div className="bg-blue-50 rounded-sm p-4 text-center">
+                        <p className="text-xl font-bold text-blue-600">{analytics.subscription?.plan || 'none'}</p>
+                        <p className="text-xs text-slate-500">Current Plan</p>
+                      </div>
+                    </div>
+                    {analytics.job_breakdown?.length > 0 && (
+                      <div>
+                        <h4 className="font-heading font-semibold text-blueprint-navy mb-3">Job Performance</h4>
+                        <div className="space-y-2">
+                          {analytics.job_breakdown.map((j, i) => (
+                            <div key={i} className="flex items-center justify-between border border-steel-grey rounded-sm p-3">
+                              <div>
+                                <p className="font-medium text-blueprint-navy text-sm">{j.title}</p>
+                                <p className="text-xs text-slate-500">{j.status} - {new Date(j.created_at).toLocaleDateString()}</p>
+                              </div>
+                              <Badge variant="outline" className="border-safety-orange text-safety-orange">{j.applications} apps</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>

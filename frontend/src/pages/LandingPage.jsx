@@ -57,6 +57,9 @@ export default function LandingPage() {
               <Link to="/jobs" className="text-slate-600 hover:text-safety-orange transition-colors font-medium" data-testid="nav-jobs">
                 Find Jobs
               </Link>
+              <Link to="/companies" className="text-slate-600 hover:text-safety-orange transition-colors font-medium" data-testid="nav-companies">
+                Companies
+              </Link>
               <Link to="/pricing" className="text-slate-600 hover:text-safety-orange transition-colors font-medium" data-testid="nav-pricing">
                 For Employers
               </Link>
