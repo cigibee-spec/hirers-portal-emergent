@@ -20,6 +20,9 @@ import ResumeTemplatesPage from "./pages/ResumeTemplatesPage";
 import InterviewsPage from "./pages/InterviewsPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
+import { MobileBottomNav } from "./components/MobileBottomNav";
+import { OfflineIndicator } from "./components/OfflineIndicator";
 import "./App.css";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -132,7 +135,12 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRouter />
+        <OfflineIndicator />
+        <div className="pb-14 md:pb-0">
+          <AppRouter />
+        </div>
+        <MobileBottomNav />
+        <PWAInstallPrompt />
         <Toaster position="top-right" richColors />
       </AuthProvider>
     </BrowserRouter>

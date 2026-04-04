@@ -5,7 +5,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { useAuth } from '../context/AuthContext';
 import { 
   HardHat, Building2, Users, Briefcase, Search, FileText, 
-  CheckCircle, ArrowRight, Star, Menu, X, Zap, Shield, Clock
+  CheckCircle, ArrowRight, Star, Menu, X, Zap, Shield, Clock, Smartphone
 } from 'lucide-react';
 
 const HERO_IMAGE = "https://images.unsplash.com/photo-1760449867527-26d7d732f88e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjBjb25zdHJ1Y3Rpb24lMjBzaXRlJTIwc2t5bGluZXxlbnwwfHx8fDE3NjcyODM5NjN8MA&ixlib=rb-4.1.0&q=85";
@@ -111,19 +111,24 @@ export default function LandingPage() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-steel-grey p-4 space-y-4">
-            <Link to="/jobs" className="block text-slate-600 font-medium py-2">Find Jobs</Link>
-            <Link to="/pricing" className="block text-slate-600 font-medium py-2">For Employers</Link>
-            {isAuthenticated ? (
-              <Button onClick={() => navigate(getDashboardLink())} className="w-full bg-safety-orange text-white">
-                Dashboard
-              </Button>
-            ) : (
-              <>
-                <Button variant="outline" onClick={() => navigate('/login')} className="w-full">Sign In</Button>
-                <Button onClick={() => navigate('/register')} className="w-full bg-safety-orange text-white">Get Started</Button>
-              </>
-            )}
+          <div className="md:hidden bg-white border-t border-steel-grey p-4 space-y-3">
+            <Link to="/jobs" className="block text-slate-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Find Jobs</Link>
+            <Link to="/companies" className="block text-slate-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Companies</Link>
+            <Link to="/resume-templates" className="block text-slate-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Templates</Link>
+            <Link to="/leaderboard" className="block text-slate-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>Leaderboard</Link>
+            <Link to="/pricing" className="block text-slate-600 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>For Employers</Link>
+            <div className="pt-2 border-t border-steel-grey space-y-2">
+              {isAuthenticated ? (
+                <Button onClick={() => { navigate(getDashboardLink()); setMobileMenuOpen(false); }} className="w-full bg-safety-orange text-white rounded-sm">
+                  Dashboard
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => { navigate('/login'); setMobileMenuOpen(false); }} className="w-full rounded-sm">Sign In</Button>
+                  <Button onClick={() => { navigate('/register'); setMobileMenuOpen(false); }} className="w-full bg-safety-orange text-white rounded-sm">Get Started</Button>
+                </>
+              )}
+            </div>
           </div>
         )}
       </nav>
@@ -400,6 +405,44 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Get The App Section */}
+      <section className="py-16 bg-blueprint-navy">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 bg-safety-orange/20 border border-safety-orange/30 rounded-sm px-4 py-2 mb-6">
+            <Smartphone className="w-4 h-4 text-safety-orange" />
+            <span className="text-safety-orange font-medium text-sm uppercase tracking-wide">Mobile App</span>
+          </div>
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-4">
+            BuildForce In Your Pocket
+          </h2>
+          <p className="text-slate-300 mb-8 max-w-lg mx-auto">
+            Install BuildForce on your phone for instant access to jobs, messages, and your dashboard. Works offline too.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-6 text-left max-w-xs mx-auto sm:mx-0">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-safety-orange rounded-sm flex items-center justify-center flex-shrink-0">
+                  <HardHat className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">BuildForce</p>
+                  <p className="text-white/60 text-xs">Progressive Web App</p>
+                </div>
+              </div>
+              <ul className="space-y-2 text-sm text-slate-300">
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-safety-orange" /> Works on iOS & Android</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-safety-orange" /> Offline access</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-safety-orange" /> Home screen install</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-safety-orange" /> No app store needed</li>
+              </ul>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 mt-6">
+            Open BuildForce in your phone's browser, tap "Share" then "Add to Home Screen"
+          </p>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 bg-safety-orange">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -452,6 +495,8 @@ export default function LandingPage() {
                 <li><Link to="/jobs" className="hover:text-safety-orange transition-colors">Browse Jobs</Link></li>
                 <li><Link to="/register" className="hover:text-safety-orange transition-colors">Create Account</Link></li>
                 <li><Link to="/talent/resume-builder" className="hover:text-safety-orange transition-colors">Resume Builder</Link></li>
+                <li><Link to="/resume-templates" className="hover:text-safety-orange transition-colors">Resume Templates</Link></li>
+                <li><Link to="/leaderboard" className="hover:text-safety-orange transition-colors">ATS Leaderboard</Link></li>
               </ul>
             </div>
             <div>
@@ -459,7 +504,7 @@ export default function LandingPage() {
               <ul className="space-y-2 text-sm text-slate-400">
                 <li><Link to="/pricing" className="hover:text-safety-orange transition-colors">Pricing</Link></li>
                 <li><Link to="/register" className="hover:text-safety-orange transition-colors">Post a Job</Link></li>
-                <li><Link to="/register" className="hover:text-safety-orange transition-colors">Browse Talent</Link></li>
+                <li><Link to="/companies" className="hover:text-safety-orange transition-colors">Company Directory</Link></li>
               </ul>
             </div>
             <div>

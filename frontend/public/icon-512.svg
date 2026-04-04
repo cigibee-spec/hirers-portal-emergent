@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="64" fill="#0f2942"/>
+  <g transform="translate(256,280)" fill="none" stroke="#f97316" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Hardhat shape -->
+    <path d="M-120,20 L-120,-20 C-120,-90 -80,-140 0,-140 C80,-140 120,-90 120,-20 L120,20" />
+    <line x1="-140" y1="20" x2="140" y2="20" />
+    <line x1="-130" y1="50" x2="130" y2="50" />
+    <line x1="-120" y1="20" x2="-130" y2="50" />
+    <line x1="120" y1="20" x2="130" y2="50" />
+    <!-- Brim accent -->
+    <line x1="0" y1="-140" x2="0" y2="-100" stroke-width="20"/>
+  </g>
+</svg>
