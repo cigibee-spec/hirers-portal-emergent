@@ -1,125 +1,92 @@
-# BuildForce - Construction Job Market Platform PRD
+# BuildForce - Construction Manpower Recruiting Platform
 
 ## Original Problem Statement
-Create an Employment and Job Market app for Construction manpower recruiting that has similar features to monster.com, where companies can subscribe as Hirers and construction talents can upload their resume for free. Resumes should be ATS format-compliant.
-
-## User Choices
-1. **Subscription Plans**: Multiple tiers - Basic ($49/mo), Pro ($149/mo), Enterprise ($299/mo)
-2. **Resume Builder**: Both form-based and AI-powered with OpenAI GPT integration
-3. **Job Categories**: Predefined construction categories (Electrician, Plumber, Carpenter, Mason, Heavy Equipment Operator, Site Supervisor, etc.)
-4. **Features**: All key features - Job search & filtering, Company profiles, Resume parsing/matching
-5. **Authentication**: Both JWT-based custom auth AND Emergent-managed Google social login
+Create an Employment and Job Market app for Construction manpower recruiting (similar to monster.com). Companies subscribe as Hirers; construction talents upload resumes for free. Resumes must be ATS format-compliant.
 
 ## User Personas
-
-### 1. Construction Talent (Job Seeker)
-- Free account
-- Can create ATS-compliant resumes with AI enhancement
-- Search and apply to jobs
-- Save favorite jobs
-- Track application status
-
-### 2. Hirer (Employer/Company)
-- Subscription required to post jobs
-- Post and manage job listings
-- View applicant resumes
-- Track applications and update status
-- Company profile management
-
-## Core Requirements
-
-### Authentication & Users
-- [x] JWT-based email/password authentication
-- [x] Google OAuth via Emergent Auth
-- [x] Two user types: Talent and Hirer
-- [x] Profile management for both types
-- [x] Account type switching
-
-### Job Management
-- [x] Job posting with full details (title, description, category, location, salary, skills, benefits)
-- [x] Job search with filters (category, location, experience level, employment type)
-- [x] Job detail pages
-- [x] Application tracking
-- [x] Job saving for talents
-
-### Resume Builder
-- [x] Form-based resume creation
-- [x] AI enhancement for summary and skills (OpenAI GPT-5.2)
-- [x] ATS-compliant format
-- [x] Sections: Personal, Summary, Experience, Education, Skills, Certifications, Languages
-
-### Subscriptions
-- [x] Three tiers: Basic, Pro, Enterprise
-- [x] Job posting limits based on plan
-- [x] Resume view limits based on plan
-- [x] Subscription activation and management
-
-## What's Been Implemented (January 2026)
-
-### Backend (FastAPI + MongoDB)
-- User registration, login, logout
-- Google OAuth session handling
-- Profile management (talent & hirer)
-- Job CRUD operations
-- Application submission and status management
-- Resume CRUD with AI enhancement endpoint
-- Subscription management
-- Saved jobs functionality
-- Categories and filter endpoints
-
-### Frontend (React + Tailwind + Shadcn)
-- Landing page with hero, stats, categories, testimonials
-- Login/Register pages with email and Google OAuth
-- Jobs page with search and advanced filtering
-- Job detail page with apply functionality
-- Talent Dashboard (profile, applications, saved jobs)
-- Hirer Dashboard (jobs, applications, company profile)
-- Resume Builder with 5 tabs and AI enhancement
-- Pricing page with 3 subscription tiers
-
-### Design System
-- Industrial Precision theme (Safety Orange + Blueprint Navy)
-- Manrope + IBM Plex Sans typography
-- Sharp corners, technical borders
-- Mobile responsive
-
-## Prioritized Backlog
-
-### P0 - Critical (Done)
-- [x] User authentication (JWT + Google OAuth)
-- [x] Job listing and search
-- [x] Resume builder
-- [x] Subscription system
-- [x] Application submission
-
-### P1 - High Priority (Next)
-- [ ] Email notifications for applications
-- [ ] Resume PDF export/download
-- [ ] Advanced job matching algorithm
-- [ ] Employer branding customization
-
-### P2 - Medium Priority
-- [ ] Job alerts and notifications
-- [ ] Application analytics for employers
-- [ ] Bulk resume upload/parsing
-- [ ] Interview scheduling integration
-
-### P3 - Future Enhancements
-- [ ] Mobile app (React Native)
-- [ ] Background check integration
-- [ ] Skills assessment tests
-- [ ] Video interview feature
-- [ ] API for third-party integrations
+- **Talents (Job Seekers)**: Free access. Search jobs, build/upload ATS resumes, apply, get AI job matching, set alerts, message hirers.
+- **Hirers (Employers)**: Subscription tiers. Post jobs, review applications, view analytics, message talents, manage company profiles.
 
 ## Tech Stack
-- **Backend**: FastAPI, MongoDB (Motor), Python 3.11
-- **Frontend**: React 19, Tailwind CSS, Shadcn UI
-- **AI**: OpenAI GPT-5.2 via Emergent Integrations
-- **Auth**: JWT + Emergent Google OAuth
-- **Infrastructure**: Kubernetes, Nginx
+- Frontend: React, Tailwind CSS, Shadcn UI
+- Backend: FastAPI (Python)
+- Database: MongoDB
+- Auth: JWT + Emergent Google OAuth
+- AI: Emergent LLM (resume enhancement, job matching)
+- Payments: Stripe (real), PayPal (MOCKED), PayMongo (MOCKED)
+- Email: SendFox
+- Storage: Emergent Object Storage
 
-## Next Action Items
-1. Add email notifications for new applications
-2. Implement resume PDF download feature
-3. Build job matching algorithm based on skills
-4. Add employer analytics dashboard
+## Core Requirements
+1. Two user types: Talents (free) & Hirers (subscription tiers)
+2. ATS-compliant resume builder with AI suggestions
+3. Job search with filtering (category, location, salary, experience)
+4. Construction-specific categories
+5. Payment integration: Stripe + PayPal + PayMongo
+6. Email notifications via SendFox
+7. Company profiles and employer branding
+8. In-app messaging
+9. AI job matching
+10. Job alerts
+11. Hirer analytics
+
+## Subscription Tiers
+- Basic ($49/mo): 5 job posts, 50 resume views
+- Pro ($149/mo): 15 job posts, 200 resume views, featured listings
+- Enterprise ($299/mo): Unlimited posts, unlimited views, priority support, dedicated manager
+
+## What's Been Implemented
+
+### Phase 1 (Initial MVP) - Completed
+- Auth (JWT + Google OAuth)
+- Job listing/search/filtering
+- Resume builder with AI enhancement
+- Basic subscription flow
+- Landing page, auth pages, dashboards
+
+### Phase 2 (Current Iteration) - Completed April 2026
+- Resume file upload (PDF/DOCX) with ATS parsing and scoring
+- Resume PDF export/download
+- Stripe payment checkout (real test key)
+- PayPal payment checkout (MOCKED)
+- PayMongo payment checkout (MOCKED)
+- Company directory and detail pages
+- In-app messaging system
+- AI job matching algorithm
+- Job alerts (CRUD)
+- Hirer analytics dashboard
+- SendFox email notifications on application status changes
+
+## Key API Endpoints
+- Auth: POST /api/auth/login, /api/auth/register
+- Jobs: GET /api/jobs, POST /api/jobs
+- Resume: GET /api/talent/resume, POST /api/talent/resume, POST /api/resumes/upload, GET /api/resumes/download-pdf
+- Payments: POST /api/payments/checkout, GET /api/payments/status/{session_id}, POST /api/webhook/stripe
+- Companies: GET /api/companies, GET /api/companies/{user_id}, GET /api/companies/{user_id}/jobs
+- Messaging: POST /api/messages, GET /api/messages/inbox, GET /api/messages/conversations, GET /api/messages/thread/{partner_id}
+- Alerts: POST /api/job-alerts, GET /api/job-alerts, DELETE /api/job-alerts/{alert_id}
+- AI: GET /api/ai/match-jobs, POST /api/talent/resume/enhance
+- Analytics: GET /api/analytics/hirer
+
+## DB Collections
+- users, jobs, applications, resumes, uploaded_resumes, messages, job_alerts, payment_transactions
+
+## Prioritized Backlog
+### P0 - Done
+All features from priority 1-3 are implemented.
+
+### P1 - Next
+- Real PayPal integration (requires API keys from user)
+- Real PayMongo integration (requires API keys from user)
+- Interview scheduling feature
+- Bulk resume upload/parsing
+
+### P2 - Future
+- Advanced AI matching with LLM-based analysis
+- Push notifications
+- Job recommendation engine
+- Resume template library
+- Mobile-responsive optimization pass
+- Admin dashboard for platform management
+- Application tracking system (ATS) for hirers
+- Video interview integration
