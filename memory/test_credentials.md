@@ -10,7 +10,12 @@
 - Password: Test1234!
 - Type: hirer
 
+## Admin Account
+- Email: admin@buildforce.com
+- Password: Admin1234!
+- Type: hirer (with admin role)
+
 ## Notes
-- Both accounts were created via API registration
 - JWT token is returned on login/register
+- Admin has access to /admin routes
 - Google OAuth also available via Emergent Auth

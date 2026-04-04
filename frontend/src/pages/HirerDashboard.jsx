@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { 
   HardHat, Plus, Briefcase, Users, FileText, Settings, LogOut,
   Building2, MapPin, DollarSign, Clock, Edit, Trash2, Eye, CheckCircle, X, Save, ChevronRight,
-  BarChart3, MessageSquare, TrendingUp
+  BarChart3, MessageSquare, TrendingUp, Calendar, Video
 } from 'lucide-react';
 
 const JOB_CATEGORIES = [
@@ -58,6 +58,8 @@ export default function HirerDashboard() {
   const [benefitInput, setBenefitInput] = useState('');
   const [analytics, setAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [schedulingInterview, setSchedulingInterview] = useState(null);
+  const [interviewForm, setInterviewForm] = useState({ scheduled_at: '', duration_minutes: 30, interview_type: 'video', notes: '' });
 
   const subscription = user?.subscription;
   const hasActiveSubscription = subscription?.status === 'active';
@@ -250,6 +252,39 @@ export default function HirerDashboard() {
     }
   };
 
+  const handleScheduleInterview = async (app) => {
+    if (!interviewForm.scheduled_at) {
+      toast.error('Please select a date and time');
+      return;
+    }
+    try {
+      const res = await fetch(`${API}/interviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        credentials: 'include',
+        body: JSON.stringify({
+          application_id: app.application_id,
+          talent_id: app.talent_id,
+          job_id: app.job_id,
+          scheduled_at: new Date(interviewForm.scheduled_at).toISOString(),
+          duration_minutes: interviewForm.duration_minutes,
+          interview_type: interviewForm.interview_type,
+          notes: interviewForm.notes
+        })
+      });
+      if (res.ok) {
+        toast.success('Interview scheduled!');
+        setSchedulingInterview(null);
+        setInterviewForm({ scheduled_at: '', duration_minutes: 30, interview_type: 'video', notes: '' });
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || 'Failed to schedule');
+      }
+    } catch (err) {
+      toast.error('Failed to schedule interview');
+    }
+  };
+
   const handleLogout = async () => {
     await logout();
     navigate('/');
@@ -377,6 +412,15 @@ export default function HirerDashboard() {
             >
               <MessageSquare className="w-4 h-4 mr-2" />
               Messages
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/interviews')}
+              className="rounded-sm"
+              data-testid="hirer-interviews-btn"
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Interviews
             </Button>
             <Button 
               variant="outline" 
@@ -539,30 +583,90 @@ export default function HirerDashboard() {
                             {applications[job.job_id].map((app) => (
                               <div 
                                 key={app.application_id}
-                                className="flex items-center justify-between p-3 border border-steel-grey rounded-sm"
+                                className="p-3 border border-steel-grey rounded-sm"
                                 data-testid={`application-item-${app.application_id}`}
                               >
-                                <div>
-                                  <p className="font-medium text-blueprint-navy">{app.talent_name}</p>
-                                  <p className="text-sm text-slate-500">{app.talent_email}</p>
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="font-medium text-blueprint-navy">{app.talent_name}</p>
+                                    <p className="text-sm text-slate-500">{app.talent_email}</p>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="rounded-sm text-xs"
+                                      onClick={() => setSchedulingInterview(schedulingInterview === app.application_id ? null : app.application_id)}
+                                      data-testid={`schedule-btn-${app.application_id}`}
+                                    >
+                                      <Calendar className="w-3 h-3 mr-1" /> Interview
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="rounded-sm text-xs"
+                                      onClick={() => navigate(`/messages`)}
+                                    >
+                                      <MessageSquare className="w-3 h-3 mr-1" /> Message
+                                    </Button>
+                                    <Select 
+                                      value={app.status} 
+                                      onValueChange={(value) => handleUpdateApplicationStatus(app.application_id, value)}
+                                    >
+                                      <SelectTrigger className="w-32 rounded-sm text-sm">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="pending">Pending</SelectItem>
+                                        <SelectItem value="reviewed">Reviewed</SelectItem>
+                                        <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                                        <SelectItem value="rejected">Rejected</SelectItem>
+                                        <SelectItem value="hired">Hired</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <Select 
-                                    value={app.status} 
-                                    onValueChange={(value) => handleUpdateApplicationStatus(app.application_id, value)}
-                                  >
-                                    <SelectTrigger className="w-32 rounded-sm text-sm">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="pending">Pending</SelectItem>
-                                      <SelectItem value="reviewed">Reviewed</SelectItem>
-                                      <SelectItem value="shortlisted">Shortlisted</SelectItem>
-                                      <SelectItem value="rejected">Rejected</SelectItem>
-                                      <SelectItem value="hired">Hired</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
+                                {/* Interview Scheduling Form */}
+                                {schedulingInterview === app.application_id && (
+                                  <div className="mt-3 p-3 bg-slate-50 rounded-sm border border-steel-grey space-y-3" data-testid={`interview-form-${app.application_id}`}>
+                                    <p className="text-sm font-medium text-blueprint-navy flex items-center gap-1"><Calendar className="w-4 h-4" /> Schedule Interview</p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div>
+                                        <Label className="text-xs">Date & Time</Label>
+                                        <Input
+                                          type="datetime-local"
+                                          value={interviewForm.scheduled_at}
+                                          onChange={(e) => setInterviewForm(prev => ({ ...prev, scheduled_at: e.target.value }))}
+                                          className="text-sm"
+                                          data-testid="interview-datetime"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label className="text-xs">Type</Label>
+                                        <Select value={interviewForm.interview_type} onValueChange={(v) => setInterviewForm(prev => ({ ...prev, interview_type: v }))}>
+                                          <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="video">Video Call</SelectItem>
+                                            <SelectItem value="phone">Phone</SelectItem>
+                                            <SelectItem value="in_person">In Person</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+                                    <Input
+                                      placeholder="Notes (optional)"
+                                      value={interviewForm.notes}
+                                      onChange={(e) => setInterviewForm(prev => ({ ...prev, notes: e.target.value }))}
+                                      className="text-sm"
+                                    />
+                                    <div className="flex gap-2">
+                                      <Button size="sm" onClick={() => handleScheduleInterview(app)} className="bg-safety-orange text-white rounded-sm text-xs" data-testid={`confirm-schedule-${app.application_id}`}>
+                                        <Video className="w-3 h-3 mr-1" /> Schedule
+                                      </Button>
+                                      <Button size="sm" variant="ghost" onClick={() => setSchedulingInterview(null)} className="text-xs">Cancel</Button>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>

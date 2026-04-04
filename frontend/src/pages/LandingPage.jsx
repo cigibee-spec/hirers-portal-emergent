@@ -60,6 +60,12 @@ export default function LandingPage() {
               <Link to="/companies" className="text-slate-600 hover:text-safety-orange transition-colors font-medium" data-testid="nav-companies">
                 Companies
               </Link>
+              <Link to="/resume-templates" className="text-slate-600 hover:text-safety-orange transition-colors font-medium" data-testid="nav-templates">
+                Templates
+              </Link>
+              <Link to="/leaderboard" className="text-slate-600 hover:text-safety-orange transition-colors font-medium" data-testid="nav-leaderboard">
+                Leaderboard
+              </Link>
               <Link to="/pricing" className="text-slate-600 hover:text-safety-orange transition-colors font-medium" data-testid="nav-pricing">
                 For Employers
               </Link>

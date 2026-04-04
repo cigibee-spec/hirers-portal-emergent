@@ -53,6 +53,24 @@ async def startup_event():
     except Exception as e:
         logger.warning(f"Storage init failed (non-critical): {e}")
 
+    # Seed admin user
+    try:
+        existing = await db.users.find_one({"email": "admin@buildforce.com"})
+        if not existing:
+            await db.users.insert_one({
+                "user_id": f"user_{uuid.uuid4().hex[:12]}",
+                "email": "admin@buildforce.com",
+                "password": hash_password("Admin1234!"),
+                "name": "BuildForce Admin",
+                "user_type": "hirer",
+                "role": "admin",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            logger.info("Admin user seeded")
+    except Exception as e:
+        logger.warning(f"Admin seed failed: {e}")
+
 # ========================= MODELS =========================
 
 # Construction Job Categories
@@ -300,6 +318,162 @@ class CompanyProfileResponse(BaseModel):
     industry: Optional[str] = None
     location: Optional[str] = None
     active_jobs_count: int = 0
+
+# Interview Models
+class InterviewCreate(BaseModel):
+    application_id: str
+    talent_id: str
+    job_id: str
+    scheduled_at: str
+    duration_minutes: int = 30
+    interview_type: str = Field(default="video", pattern="^(video|phone|in_person)$")
+    notes: Optional[str] = None
+    location_or_link: Optional[str] = None
+
+class InterviewResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    interview_id: str
+    application_id: str
+    hirer_id: str
+    talent_id: str
+    job_id: str
+    job_title: Optional[str] = None
+    company_name: Optional[str] = None
+    hirer_name: Optional[str] = None
+    talent_name: Optional[str] = None
+    talent_email: Optional[str] = None
+    scheduled_at: str
+    duration_minutes: int = 30
+    interview_type: str = "video"
+    meeting_link: Optional[str] = None
+    notes: Optional[str] = None
+    location_or_link: Optional[str] = None
+    status: str = "scheduled"
+    created_at: str
+
+# Resume Template Models
+RESUME_TEMPLATES = [
+    {
+        "template_id": "tpl_construction_general",
+        "name": "Construction General",
+        "description": "A versatile template suited for any construction role, highlighting safety certifications and project experience.",
+        "category": "General",
+        "sections": {
+            "full_name": "Your Full Name",
+            "email": "your.email@example.com",
+            "phone": "(555) 000-0000",
+            "location": "City, State",
+            "summary": "Dedicated construction professional with [X] years of experience in residential and commercial projects. OSHA certified with strong focus on safety compliance and quality workmanship.",
+            "experience": [
+                {"title": "Construction Worker", "company": "ABC Builders", "start_date": "2020", "end_date": "Present", "description": "Performed concrete pouring, framing, and finishing work on residential projects. Maintained compliance with safety regulations."},
+            ],
+            "education": [{"degree": "High School Diploma", "institution": "Your School", "graduation_year": "2018"}],
+            "skills": ["Blueprint Reading", "OSHA Safety", "Power Tools", "Concrete Work", "Framing", "Teamwork"],
+            "certifications": ["OSHA 30-Hour Construction Safety", "First Aid/CPR"],
+            "languages": ["English"]
+        }
+    },
+    {
+        "template_id": "tpl_electrician",
+        "name": "Licensed Electrician",
+        "description": "Tailored for electricians with focus on licenses, code compliance, and technical skills.",
+        "category": "Electrician",
+        "sections": {
+            "full_name": "Your Full Name",
+            "email": "your.email@example.com",
+            "phone": "(555) 000-0000",
+            "location": "City, State",
+            "summary": "Licensed electrician with [X] years of experience in commercial and residential electrical systems. Expert in NEC code compliance, troubleshooting, and system installations.",
+            "experience": [
+                {"title": "Journeyman Electrician", "company": "PowerTech Electric", "start_date": "2019", "end_date": "Present", "description": "Install, maintain, and repair electrical wiring, equipment, and fixtures. Read and interpret blueprints and technical diagrams."},
+            ],
+            "education": [{"degree": "Electrical Technology Certificate", "institution": "Technical College", "graduation_year": "2019"}],
+            "skills": ["Electrical Wiring", "NEC Code Compliance", "Troubleshooting", "Panel Installation", "Blueprint Reading", "PLC Programming"],
+            "certifications": ["Journeyman Electrician License", "OSHA 30-Hour", "NFPA 70E Arc Flash Safety"],
+            "languages": ["English"]
+        }
+    },
+    {
+        "template_id": "tpl_project_manager",
+        "name": "Project Manager",
+        "description": "Designed for construction project managers emphasizing leadership, budgets, and timelines.",
+        "category": "Project Manager",
+        "sections": {
+            "full_name": "Your Full Name",
+            "email": "your.email@example.com",
+            "phone": "(555) 000-0000",
+            "location": "City, State",
+            "summary": "Results-driven construction project manager with [X] years overseeing multi-million dollar commercial and residential projects. Proven track record of delivering projects on time and under budget.",
+            "experience": [
+                {"title": "Senior Project Manager", "company": "BuildRight Corp", "start_date": "2018", "end_date": "Present", "description": "Managed portfolio of $10M+ construction projects. Coordinated cross-functional teams of 50+ workers. Reduced project costs by 15% through vendor negotiations."},
+            ],
+            "education": [{"degree": "B.S. Construction Management", "institution": "State University", "graduation_year": "2016"}],
+            "skills": ["Project Scheduling", "Budget Management", "Procore", "MS Project", "Contract Negotiation", "Team Leadership", "Risk Management"],
+            "certifications": ["PMP Certification", "OSHA 30-Hour", "LEED Green Associate"],
+            "languages": ["English", "Spanish"]
+        }
+    },
+    {
+        "template_id": "tpl_heavy_equipment",
+        "name": "Heavy Equipment Operator",
+        "description": "For operators of excavators, bulldozers, cranes, and other heavy machinery.",
+        "category": "Heavy Equipment Operator",
+        "sections": {
+            "full_name": "Your Full Name",
+            "email": "your.email@example.com",
+            "phone": "(555) 000-0000",
+            "location": "City, State",
+            "summary": "Experienced heavy equipment operator with [X] years operating excavators, bulldozers, and loaders on large-scale construction and infrastructure projects.",
+            "experience": [
+                {"title": "Heavy Equipment Operator", "company": "Metro Construction", "start_date": "2017", "end_date": "Present", "description": "Operated excavators, backhoes, and bulldozers for site grading and excavation. Maintained equipment logs and performed daily safety inspections."},
+            ],
+            "education": [{"degree": "Heavy Equipment Operator Certification", "institution": "Vocational Training Center", "graduation_year": "2017"}],
+            "skills": ["Excavator Operation", "Bulldozer Operation", "GPS Grading Systems", "Equipment Maintenance", "Site Grading", "Safety Protocols"],
+            "certifications": ["NCCCO Crane Operator", "CDL Class A", "OSHA 10-Hour"],
+            "languages": ["English"]
+        }
+    },
+    {
+        "template_id": "tpl_plumber",
+        "name": "Licensed Plumber",
+        "description": "For plumbing professionals highlighting pipe systems, code knowledge, and certifications.",
+        "category": "Plumber",
+        "sections": {
+            "full_name": "Your Full Name",
+            "email": "your.email@example.com",
+            "phone": "(555) 000-0000",
+            "location": "City, State",
+            "summary": "Licensed plumber with [X] years of experience in residential and commercial plumbing systems. Skilled in pipe fitting, drain cleaning, and water heater installations.",
+            "experience": [
+                {"title": "Journeyman Plumber", "company": "FlowRight Plumbing", "start_date": "2018", "end_date": "Present", "description": "Installed and repaired plumbing systems in residential and commercial buildings. Inspected drainage and water systems for code compliance."},
+            ],
+            "education": [{"degree": "Plumbing Apprenticeship", "institution": "Plumbers Union Local 123", "graduation_year": "2018"}],
+            "skills": ["Pipe Fitting", "Soldering", "Blueprint Reading", "Drain Cleaning", "Water Heater Installation", "Backflow Prevention"],
+            "certifications": ["Journeyman Plumber License", "Backflow Prevention Certification", "OSHA 10-Hour"],
+            "languages": ["English"]
+        }
+    },
+    {
+        "template_id": "tpl_safety_officer",
+        "name": "Safety Officer",
+        "description": "For construction safety professionals focused on compliance, audits, and training.",
+        "category": "Safety Officer",
+        "sections": {
+            "full_name": "Your Full Name",
+            "email": "your.email@example.com",
+            "phone": "(555) 000-0000",
+            "location": "City, State",
+            "summary": "Certified construction safety officer with [X] years ensuring OSHA compliance and implementing safety programs on large-scale commercial and industrial projects.",
+            "experience": [
+                {"title": "Site Safety Officer", "company": "SafeBuild Inc", "start_date": "2017", "end_date": "Present", "description": "Conducted daily site inspections and safety audits. Developed safety training programs reducing incidents by 40%. Managed incident investigations and reporting."},
+            ],
+            "education": [{"degree": "B.S. Occupational Health & Safety", "institution": "State University", "graduation_year": "2016"}],
+            "skills": ["OSHA Compliance", "Safety Audits", "Incident Investigation", "Safety Training", "Hazard Analysis", "PPE Management", "Emergency Response"],
+            "certifications": ["OSHA 500 Trainer", "CHST (Construction Health & Safety Technician)", "First Aid/CPR Instructor"],
+            "languages": ["English", "Spanish"]
+        }
+    }
+]
 
 # ========================= AUTH HELPERS =========================
 
@@ -1601,6 +1775,516 @@ async def get_hirer_analytics(current_user: dict = Depends(get_current_user)):
         },
         "job_breakdown": job_stats
     }
+
+
+# ========================= RESUME LEADERBOARD =========================
+
+@api_router.get("/leaderboard/ats-scores")
+async def get_ats_leaderboard():
+    """Anonymized ATS score distribution from uploaded resumes."""
+    pipeline = [
+        {"$match": {"ats_score": {"$gt": 0}, "is_deleted": {"$ne": True}}},
+        {"$project": {"_id": 0, "ats_score": 1}},
+        {"$sort": {"ats_score": -1}}
+    ]
+    scores_raw = await db.uploaded_resumes.aggregate(pipeline).to_list(500)
+    scores = [s["ats_score"] for s in scores_raw]
+
+    # Also include resume builder scores
+    builder_pipeline = [
+        {"$match": {"ats_score": {"$exists": True}}},
+        {"$project": {"_id": 0, "ats_score": 1}},
+    ]
+    builder_scores = await db.resumes.aggregate(builder_pipeline).to_list(500)
+    scores += [s["ats_score"] for s in builder_scores if s.get("ats_score")]
+
+    if not scores:
+        return {
+            "total_resumes": 0,
+            "distribution": {"0-20": 0, "21-40": 0, "41-60": 0, "61-80": 0, "81-100": 0},
+            "average_score": 0,
+            "top_scores": [],
+            "percentiles": {}
+        }
+
+    scores.sort(reverse=True)
+    total = len(scores)
+    avg = round(sum(scores) / total, 1)
+
+    distribution = {"0-20": 0, "21-40": 0, "41-60": 0, "61-80": 0, "81-100": 0}
+    for s in scores:
+        if s <= 20:
+            distribution["0-20"] += 1
+        elif s <= 40:
+            distribution["21-40"] += 1
+        elif s <= 60:
+            distribution["41-60"] += 1
+        elif s <= 80:
+            distribution["61-80"] += 1
+        else:
+            distribution["81-100"] += 1
+
+    percentiles = {}
+    for p in [25, 50, 75, 90]:
+        idx = int(total * (1 - p / 100))
+        percentiles[f"p{p}"] = scores[min(idx, total - 1)]
+
+    return {
+        "total_resumes": total,
+        "distribution": distribution,
+        "average_score": avg,
+        "top_scores": scores[:10],
+        "percentiles": percentiles
+    }
+
+
+# ========================= ADVANCED AI MATCHING =========================
+
+@api_router.post("/ai/deep-match/{job_id}")
+async def ai_deep_match_job(job_id: str, current_user: dict = Depends(get_current_user)):
+    """Use LLM to deeply analyze resume-to-job fit."""
+    if current_user["user_type"] != "talent":
+        raise HTTPException(status_code=403, detail="Only talents can use AI matching")
+
+    job = await db.jobs.find_one({"job_id": job_id}, {"_id": 0})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    resume = await db.resumes.find_one({"user_id": current_user["user_id"]}, {"_id": 0})
+    talent_profile = current_user.get("talent_profile") or {}
+
+    resume_text = ""
+    if resume:
+        resume_text = f"Name: {resume.get('full_name', '')}\n"
+        resume_text += f"Summary: {resume.get('summary', '')}\n"
+        resume_text += f"Skills: {', '.join(resume.get('skills', []))}\n"
+        for exp in resume.get("experience", []):
+            resume_text += f"Experience: {exp.get('title','')} at {exp.get('company','')} - {exp.get('description','')}\n"
+        for edu in resume.get("education", []):
+            resume_text += f"Education: {edu.get('degree','')} from {edu.get('institution','')}\n"
+        resume_text += f"Certifications: {', '.join(resume.get('certifications', []))}\n"
+    else:
+        resume_text = f"Skills: {', '.join(talent_profile.get('skills', []))}\nExperience Level: {talent_profile.get('experience_level', 'Unknown')}\nCategories: {', '.join(talent_profile.get('categories', []))}"
+
+    job_text = f"Title: {job['title']}\nCategory: {job['category']}\nLocation: {job['location']}\n"
+    job_text += f"Experience: {job['experience_level']}\nDescription: {job['description']}\n"
+    job_text += f"Required Skills: {', '.join(job.get('skills_required', []))}\n"
+    job_text += f"Benefits: {', '.join(job.get('benefits', []))}"
+
+    prompt = f"""Analyze this construction job candidate's fit for the position. Return a JSON with:
+- match_percentage (0-100)
+- strengths (list of 3-5 strengths)
+- gaps (list of areas to improve)
+- recommendation (brief 2-sentence recommendation)
+- interview_tips (list of 2-3 tips for the interview)
+
+CANDIDATE:
+{resume_text}
+
+JOB:
+{job_text}
+
+Return ONLY valid JSON, no markdown."""
+
+    try:
+        chat = LlmChat(emergent_key=EMERGENT_LLM_KEY, model="claude-sonnet-4-20250514")
+        response = await chat.send_message_async(UserMessage(text=prompt))
+        import json as _json
+        text = response.text.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+        analysis = _json.loads(text)
+        return {
+            "job_id": job_id,
+            "job_title": job["title"],
+            "company_name": job.get("company_name", ""),
+            "analysis": analysis
+        }
+    except Exception as e:
+        logger.error(f"AI deep match error: {e}")
+        return {
+            "job_id": job_id,
+            "job_title": job["title"],
+            "company_name": job.get("company_name", ""),
+            "analysis": {
+                "match_percentage": 50,
+                "strengths": ["Profile on file"],
+                "gaps": ["Complete your resume for better analysis"],
+                "recommendation": "Please complete your resume to get an accurate AI analysis. A full resume enables better matching.",
+                "interview_tips": ["Research the company", "Prepare examples of past work"]
+            }
+        }
+
+
+# ========================= JOB RECOMMENDATIONS =========================
+
+@api_router.get("/recommendations")
+async def get_job_recommendations(current_user: dict = Depends(get_current_user)):
+    """Smart job recommendations based on profile, applications, and views."""
+    if current_user["user_type"] != "talent":
+        raise HTTPException(status_code=403, detail="Only talents can get recommendations")
+
+    talent = current_user.get("talent_profile") or {}
+    resume = await db.resumes.find_one({"user_id": current_user["user_id"]}, {"_id": 0})
+
+    # Gather signals
+    skills = set(talent.get("skills", []))
+    categories = set(talent.get("categories", []))
+    if resume:
+        skills.update(resume.get("skills", []))
+
+    # Get applied job categories for signals
+    apps = await db.applications.find({"talent_id": current_user["user_id"]}, {"_id": 0, "job_id": 1}).to_list(50)
+    applied_job_ids = set(a["job_id"] for a in apps)
+    for jid in list(applied_job_ids)[:10]:
+        job = await db.jobs.find_one({"job_id": jid}, {"_id": 0, "category": 1, "skills_required": 1})
+        if job:
+            categories.add(job.get("category", ""))
+            skills.update(job.get("skills_required", []))
+
+    categories.discard("")
+    skills.discard("")
+
+    query = {"status": "active", "job_id": {"$nin": list(applied_job_ids)}}
+    or_conditions = []
+    if categories:
+        or_conditions.append({"category": {"$in": list(categories)}})
+    if skills:
+        or_conditions.append({"skills_required": {"$in": list(skills)}})
+    location = talent.get("location", "")
+    if location:
+        or_conditions.append({"location": {"$regex": location, "$options": "i"}})
+    if or_conditions:
+        query["$or"] = or_conditions
+
+    jobs = await db.jobs.find(query, {"_id": 0}).sort("created_at", -1).limit(15).to_list(15)
+
+    # Score recommendations
+    recommendations = []
+    for job in jobs:
+        score = 0
+        reasons = []
+        if job.get("category") in categories:
+            score += 35
+            reasons.append("Matches your interest")
+        job_skills = set(job.get("skills_required", []))
+        matching = job_skills.intersection(skills)
+        if matching:
+            score += min(len(matching) * 10, 30)
+            reasons.append(f"{len(matching)} matching skill(s)")
+        if location and location.lower() in job.get("location", "").lower():
+            score += 20
+            reasons.append("Near your location")
+        exp = talent.get("experience_level", "")
+        if exp and exp == job.get("experience_level"):
+            score += 15
+            reasons.append("Experience level fit")
+
+        recommendations.append({
+            **{k: v for k, v in job.items()},
+            "relevance_score": min(score, 100),
+            "reasons": reasons
+        })
+
+    recommendations.sort(key=lambda x: x["relevance_score"], reverse=True)
+    return recommendations
+
+
+# ========================= RESUME TEMPLATES =========================
+
+@api_router.get("/resume-templates")
+async def list_resume_templates():
+    return [{"template_id": t["template_id"], "name": t["name"], "description": t["description"], "category": t["category"]} for t in RESUME_TEMPLATES]
+
+
+@api_router.get("/resume-templates/{template_id}")
+async def get_resume_template(template_id: str):
+    for t in RESUME_TEMPLATES:
+        if t["template_id"] == template_id:
+            return t
+    raise HTTPException(status_code=404, detail="Template not found")
+
+
+# ========================= INTERVIEW SCHEDULING =========================
+
+@api_router.post("/interviews", response_model=InterviewResponse)
+async def schedule_interview(data: InterviewCreate, current_user: dict = Depends(get_current_user)):
+    if current_user["user_type"] != "hirer":
+        raise HTTPException(status_code=403, detail="Only hirers can schedule interviews")
+
+    app_doc = await db.applications.find_one({"application_id": data.application_id}, {"_id": 0})
+    if not app_doc:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    job = await db.jobs.find_one({"job_id": data.job_id}, {"_id": 0})
+    if not job or job["hirer_id"] != current_user["user_id"]:
+        raise HTTPException(status_code=403, detail="Not authorized for this job")
+
+    talent = await db.users.find_one({"user_id": data.talent_id}, {"_id": 0, "name": 1, "email": 1})
+
+    meeting_link = ""
+    if data.interview_type == "video":
+        meeting_link = data.location_or_link or f"https://meet.buildforce.com/room/{uuid.uuid4().hex[:10]}"
+
+    interview = {
+        "interview_id": f"intv_{uuid.uuid4().hex[:12]}",
+        "application_id": data.application_id,
+        "hirer_id": current_user["user_id"],
+        "talent_id": data.talent_id,
+        "job_id": data.job_id,
+        "job_title": job.get("title", ""),
+        "company_name": job.get("company_name", ""),
+        "hirer_name": current_user.get("name", ""),
+        "talent_name": talent.get("name", "") if talent else "",
+        "talent_email": talent.get("email", "") if talent else "",
+        "scheduled_at": data.scheduled_at,
+        "duration_minutes": data.duration_minutes,
+        "interview_type": data.interview_type,
+        "meeting_link": meeting_link,
+        "notes": data.notes,
+        "location_or_link": data.location_or_link or meeting_link,
+        "status": "scheduled",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.interviews.insert_one(interview)
+
+    # Update application status
+    await db.applications.update_one(
+        {"application_id": data.application_id},
+        {"$set": {"status": "shortlisted"}}
+    )
+
+    # Notify talent via SendFox
+    try:
+        from services.email_service import send_application_notification
+        send_application_notification(
+            applicant_email=talent.get("email", "") if talent else "",
+            applicant_name=talent.get("name", "") if talent else "",
+            status="shortlisted",
+            job_title=job.get("title", ""),
+            company_name=job.get("company_name", "")
+        )
+    except Exception as e:
+        logger.warning(f"Interview notification failed: {e}")
+
+    return InterviewResponse(**interview)
+
+
+@api_router.get("/interviews", response_model=List[InterviewResponse])
+async def get_interviews(current_user: dict = Depends(get_current_user)):
+    query_field = "hirer_id" if current_user["user_type"] == "hirer" else "talent_id"
+    interviews = await db.interviews.find(
+        {query_field: current_user["user_id"]}, {"_id": 0}
+    ).sort("scheduled_at", 1).to_list(100)
+    return [InterviewResponse(**i) for i in interviews]
+
+
+@api_router.put("/interviews/{interview_id}/status")
+async def update_interview_status(
+    interview_id: str,
+    status: str = Query(..., pattern="^(scheduled|confirmed|cancelled|completed|rescheduled)$"),
+    current_user: dict = Depends(get_current_user)
+):
+    interview = await db.interviews.find_one({"interview_id": interview_id}, {"_id": 0})
+    if not interview:
+        raise HTTPException(status_code=404, detail="Interview not found")
+    if current_user["user_id"] not in [interview["hirer_id"], interview["talent_id"]]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    await db.interviews.update_one({"interview_id": interview_id}, {"$set": {"status": status}})
+    return {"message": f"Interview status updated to {status}"}
+
+
+# ========================= BULK RESUME UPLOAD =========================
+
+@api_router.post("/resumes/bulk-upload")
+async def bulk_upload_resumes(
+    files: List[UploadFile] = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user["user_type"] != "talent":
+        raise HTTPException(status_code=403, detail="Only talents can upload resumes")
+
+    if len(files) > 5:
+        raise HTTPException(status_code=400, detail="Maximum 5 files at a time")
+
+    results = []
+    for file in files:
+        file_ext = file.filename.split(".")[-1].lower() if file.filename else ""
+        if file_ext not in ["pdf", "docx"]:
+            results.append({"filename": file.filename, "status": "skipped", "reason": "Unsupported format"})
+            continue
+
+        file_data = await file.read()
+        if len(file_data) > 10 * 1024 * 1024:
+            results.append({"filename": file.filename, "status": "skipped", "reason": "File too large"})
+            continue
+
+        try:
+            from services.storage import upload_file
+            storage_result = upload_file(
+                current_user["user_id"], file.filename or "resume.pdf",
+                file_data, file.content_type or "application/octet-stream"
+            )
+        except Exception:
+            storage_result = {"storage_path": ""}
+
+        extracted_text = ""
+        try:
+            if file_ext == "pdf":
+                import pdfplumber
+                with pdfplumber.open(io.BytesIO(file_data)) as pdf:
+                    for page in pdf.pages:
+                        pt = page.extract_text()
+                        if pt:
+                            extracted_text += pt + "\n"
+            elif file_ext == "docx":
+                from docx import Document
+                doc = Document(io.BytesIO(file_data))
+                extracted_text = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
+        except Exception:
+            pass
+
+        # Quick ATS score
+        ats_score = 0
+        if extracted_text:
+            text_lower = extracted_text.lower()
+            if any(w in text_lower for w in ["email", "@", "phone"]):
+                ats_score += 15
+            if any(w in text_lower for w in ["experience", "work"]):
+                ats_score += 15
+            if any(w in text_lower for w in ["education", "degree"]):
+                ats_score += 10
+            if any(w in text_lower for w in ["skills", "competencies"]):
+                ats_score += 10
+            if any(w in text_lower for w in ["certification", "osha"]):
+                ats_score += 10
+            if len(extracted_text) > 200:
+                ats_score += 10
+            if any(w in text_lower for w in ["construction", "building", "safety"]):
+                ats_score += 10
+
+        file_record = {
+            "file_id": f"file_{uuid.uuid4().hex[:12]}",
+            "user_id": current_user["user_id"],
+            "storage_path": storage_result.get("storage_path", ""),
+            "original_filename": file.filename,
+            "content_type": file.content_type,
+            "size": len(file_data),
+            "extracted_text": extracted_text[:5000],
+            "ats_score": ats_score,
+            "is_deleted": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.uploaded_resumes.insert_one(file_record)
+        results.append({
+            "filename": file.filename,
+            "file_id": file_record["file_id"],
+            "status": "uploaded",
+            "ats_score": ats_score,
+            "size": len(file_data)
+        })
+
+    return {"uploaded": len([r for r in results if r.get("status") == "uploaded"]), "results": results}
+
+
+# ========================= ADMIN ENDPOINTS =========================
+
+@api_router.get("/admin/dashboard")
+async def admin_dashboard(current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin" and current_user["email"] not in ["admin@buildforce.com"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    total_users = await db.users.count_documents({})
+    total_talents = await db.users.count_documents({"user_type": "talent"})
+    total_hirers = await db.users.count_documents({"user_type": "hirer"})
+    total_jobs = await db.jobs.count_documents({})
+    active_jobs = await db.jobs.count_documents({"status": "active"})
+    total_applications = await db.applications.count_documents({})
+    total_resumes = await db.resumes.count_documents({})
+    total_uploaded = await db.uploaded_resumes.count_documents({"is_deleted": {"$ne": True}})
+    total_messages = await db.messages.count_documents({})
+    total_interviews = await db.interviews.count_documents({})
+    total_transactions = await db.payment_transactions.count_documents({})
+    paid_transactions = await db.payment_transactions.count_documents({"payment_status": "paid"})
+
+    # Recent users
+    recent_users = await db.users.find({}, {"_id": 0, "password": 0}).sort("created_at", -1).limit(10).to_list(10)
+
+    # Revenue
+    paid_txns = await db.payment_transactions.find({"payment_status": "paid"}, {"_id": 0, "amount": 1}).to_list(500)
+    total_revenue = sum(t.get("amount", 0) for t in paid_txns)
+
+    return {
+        "users": {"total": total_users, "talents": total_talents, "hirers": total_hirers},
+        "jobs": {"total": total_jobs, "active": active_jobs},
+        "applications": total_applications,
+        "resumes": {"built": total_resumes, "uploaded": total_uploaded},
+        "messages": total_messages,
+        "interviews": total_interviews,
+        "payments": {"total_transactions": total_transactions, "paid": paid_transactions, "revenue": total_revenue},
+        "recent_users": [{
+            "user_id": u.get("user_id", ""),
+            "name": u.get("name", ""),
+            "email": u.get("email", ""),
+            "user_type": u.get("user_type", ""),
+            "is_active": u.get("is_active", True),
+            "created_at": u.get("created_at", "")
+        } for u in recent_users]
+    }
+
+
+@api_router.get("/admin/users")
+async def admin_list_users(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    user_type: Optional[str] = None,
+    search: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user.get("role") != "admin" and current_user["email"] not in ["admin@buildforce.com"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    query = {}
+    if user_type:
+        query["user_type"] = user_type
+    if search:
+        query["$or"] = [
+            {"name": {"$regex": search, "$options": "i"}},
+            {"email": {"$regex": search, "$options": "i"}}
+        ]
+
+    total = await db.users.count_documents(query)
+    skip = (page - 1) * limit
+    users = await db.users.find(query, {"_id": 0, "password": 0}).skip(skip).limit(limit).sort("created_at", -1).to_list(limit)
+
+    return {
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "users": [{
+            "user_id": u.get("user_id", ""),
+            "name": u.get("name", ""),
+            "email": u.get("email", ""),
+            "user_type": u.get("user_type", ""),
+            "is_active": u.get("is_active", True),
+            "subscription": u.get("subscription", {}),
+            "created_at": u.get("created_at", "")
+        } for u in users]
+    }
+
+
+@api_router.put("/admin/users/{user_id}/status")
+async def admin_toggle_user_status(
+    user_id: str,
+    is_active: bool = Query(...),
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user.get("role") != "admin" and current_user["email"] not in ["admin@buildforce.com"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    result = await db.users.update_one({"user_id": user_id}, {"$set": {"is_active": is_active}})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": f"User {'activated' if is_active else 'deactivated'}"}
 
 
 # ========================= UTILITY ENDPOINTS =========================

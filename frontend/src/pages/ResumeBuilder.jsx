@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -24,6 +24,8 @@ const COMMON_SKILLS = [
 export default function ResumeBuilder() {
   const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const templateId = searchParams.get('template');
   
   const [resume, setResume] = useState({
     full_name: user?.name || '',
@@ -60,6 +62,35 @@ export default function ResumeBuilder() {
         const data = await response.json();
         if (data) {
           setResume(data);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // If no existing resume, try loading template
+      if (templateId) {
+        try {
+          const tplRes = await fetch(`${API}/resume-templates/${templateId}`);
+          if (tplRes.ok) {
+            const tpl = await tplRes.json();
+            const sec = tpl.sections || {};
+            setResume(prev => ({
+              ...prev,
+              full_name: prev.full_name || sec.full_name || '',
+              email: prev.email || sec.email || '',
+              phone: sec.phone || '',
+              location: sec.location || '',
+              summary: sec.summary || '',
+              experience: sec.experience || [],
+              education: sec.education || [],
+              skills: sec.skills || [],
+              certifications: sec.certifications || [],
+              languages: sec.languages || []
+            }));
+            toast.success(`Template "${tpl.name}" loaded! Customize it with your details.`);
+          }
+        } catch (e) {
+          console.error('Template load failed:', e);
         }
       }
     } catch (error) {

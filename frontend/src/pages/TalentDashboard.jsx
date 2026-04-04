@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { 
   HardHat, User, FileText, Briefcase, Bookmark, Settings, LogOut,
   MapPin, Mail, Phone, Edit, Save, X, ArrowRight, Building2, Clock, ChevronRight,
-  Upload, Download, Target, Bell, MessageSquare
+  Upload, Download, Target, Bell, MessageSquare, Calendar, Sparkles, Star
 } from 'lucide-react';
 
 const JOB_CATEGORIES = [
@@ -42,6 +42,12 @@ export default function TalentDashboard() {
   const [alerts, setAlerts] = useState([]);
   const [newAlert, setNewAlert] = useState({ categories: [], locations: [], keywords: [] });
   const [alertKeyword, setAlertKeyword] = useState('');
+  const [recommendations, setRecommendations] = useState([]);
+  const [recsLoading, setRecsLoading] = useState(false);
+  const [deepMatchResult, setDeepMatchResult] = useState(null);
+  const [deepMatchLoading, setDeepMatchLoading] = useState(false);
+  const [bulkUploading, setBulkUploading] = useState(false);
+  const [bulkResults, setBulkResults] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -219,6 +225,65 @@ export default function TalentDashboard() {
     }
   };
 
+  const fetchRecommendations = async () => {
+    setRecsLoading(true);
+    try {
+      const res = await fetch(`${API}/recommendations`, {
+        credentials: 'include', headers: getAuthHeaders()
+      });
+      if (res.ok) setRecommendations(await res.json());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRecsLoading(false);
+    }
+  };
+
+  const handleDeepMatch = async (jobId) => {
+    setDeepMatchLoading(true);
+    setDeepMatchResult(null);
+    try {
+      const res = await fetch(`${API}/ai/deep-match/${jobId}`, {
+        method: 'POST', credentials: 'include', headers: getAuthHeaders()
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDeepMatchResult(data);
+      } else {
+        toast.error('AI analysis failed');
+      }
+    } catch (err) {
+      toast.error('Failed to get AI analysis');
+    } finally {
+      setDeepMatchLoading(false);
+    }
+  };
+
+  const handleBulkUpload = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setBulkUploading(true);
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach(f => formData.append('files', f));
+      const res = await fetch(`${API}/resumes/bulk-upload`, {
+        method: 'POST', headers: getAuthHeaders(), credentials: 'include', body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setBulkResults(data);
+        toast.success(`${data.uploaded} file(s) uploaded!`);
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || 'Bulk upload failed');
+      }
+    } catch (err) {
+      toast.error('Bulk upload failed');
+    } finally {
+      setBulkUploading(false);
+    }
+  };
+
   const handleLogout = async () => {
     await logout();
     navigate('/');
@@ -321,6 +386,24 @@ export default function TalentDashboard() {
               Messages
             </Button>
             <Button 
+              variant="outline"
+              onClick={() => navigate('/interviews')}
+              className="rounded-sm"
+              data-testid="interviews-btn"
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Interviews
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => navigate('/resume-templates')}
+              className="rounded-sm"
+              data-testid="templates-btn"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Templates
+            </Button>
+            <Button 
               variant="outline" 
               onClick={handleSwitchToHirer}
               className="rounded-sm"
@@ -362,11 +445,14 @@ export default function TalentDashboard() {
             <TabsTrigger value="saved" className="rounded-sm data-[state=active]:bg-safety-orange data-[state=active]:text-white">
               Saved Jobs
             </TabsTrigger>
+            <TabsTrigger value="recommended" className="rounded-sm data-[state=active]:bg-safety-orange data-[state=active]:text-white" onClick={fetchRecommendations}>
+              Recommended
+            </TabsTrigger>
             <TabsTrigger value="resume" className="rounded-sm data-[state=active]:bg-safety-orange data-[state=active]:text-white">
               Resume Upload
             </TabsTrigger>
             <TabsTrigger value="matching" className="rounded-sm data-[state=active]:bg-safety-orange data-[state=active]:text-white" onClick={fetchMatchedJobs}>
-              Job Matching
+              AI Match
             </TabsTrigger>
             <TabsTrigger value="alerts" className="rounded-sm data-[state=active]:bg-safety-orange data-[state=active]:text-white" onClick={fetchAlerts}>
               Alerts
@@ -492,6 +578,99 @@ export default function TalentDashboard() {
             </Card>
           </TabsContent>
 
+          {/* Recommendations Tab */}
+          <TabsContent value="recommended">
+            <Card className="border border-steel-grey rounded-sm">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="font-heading text-lg flex items-center gap-2"><Star className="w-5 h-5 text-safety-orange" /> Recommended For You</CardTitle>
+                <Button onClick={fetchRecommendations} disabled={recsLoading} variant="outline" className="rounded-sm" data-testid="refresh-recs-btn">
+                  {recsLoading ? 'Loading...' : 'Refresh'}
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {recsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="w-10 h-10 border-4 border-safety-orange border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  </div>
+                ) : recommendations.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Star className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                    <p className="text-slate-500">Complete your profile to get personalized recommendations.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recommendations.map((job) => (
+                      <div key={job.job_id} className="border border-steel-grey rounded-sm p-4 hover:border-safety-orange/50 transition-all" data-testid={`rec-job-${job.job_id}`}>
+                        <div className="flex flex-col sm:flex-row justify-between gap-3">
+                          <div className="cursor-pointer flex-1" onClick={() => navigate(`/jobs/${job.job_id}`)}>
+                            <h4 className="font-heading font-semibold text-blueprint-navy">{job.title}</h4>
+                            <p className="text-sm text-slate-500">{job.company_name} - {job.location}</p>
+                            {job.reasons?.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {job.reasons.map((r, i) => (
+                                  <Badge key={i} variant="outline" className="text-xs border-blue-300 text-blue-700 bg-blue-50">{r}</Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-safety-orange">{job.relevance_score}%</div>
+                              <p className="text-xs text-slate-400">Fit</p>
+                            </div>
+                            <Button size="sm" variant="outline" onClick={() => handleDeepMatch(job.job_id)} disabled={deepMatchLoading} className="rounded-sm text-xs" data-testid={`deep-match-${job.job_id}`}>
+                              <Sparkles className="w-3 h-3 mr-1" /> AI Analysis
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Deep Match Result Modal */}
+                {deepMatchResult && (
+                  <div className="mt-6 p-4 bg-slate-50 rounded-sm border border-steel-grey" data-testid="deep-match-result">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-heading font-semibold text-blueprint-navy flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-safety-orange" /> AI Deep Match Analysis
+                      </h4>
+                      <button onClick={() => setDeepMatchResult(null)}><X className="w-4 h-4 text-slate-400" /></button>
+                    </div>
+                    <p className="text-sm text-slate-600 mb-3">{deepMatchResult.job_title} at {deepMatchResult.company_name}</p>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs font-medium text-slate-500 mb-1">Match Score</p>
+                        <div className="text-3xl font-bold text-safety-orange">{deepMatchResult.analysis?.match_percentage || 0}%</div>
+                      </div>
+                      {deepMatchResult.analysis?.strengths?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-green-700 mb-1">Strengths</p>
+                          {deepMatchResult.analysis.strengths.map((s, i) => <p key={i} className="text-sm text-slate-600">+ {s}</p>)}
+                        </div>
+                      )}
+                      {deepMatchResult.analysis?.gaps?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-red-700 mb-1">Areas to Improve</p>
+                          {deepMatchResult.analysis.gaps.map((g, i) => <p key={i} className="text-sm text-slate-600">- {g}</p>)}
+                        </div>
+                      )}
+                      {deepMatchResult.analysis?.interview_tips?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-blue-700 mb-1">Interview Tips</p>
+                          {deepMatchResult.analysis.interview_tips.map((t, i) => <p key={i} className="text-sm text-slate-600">{i+1}. {t}</p>)}
+                        </div>
+                      )}
+                    </div>
+                    {deepMatchResult.analysis?.recommendation && (
+                      <p className="mt-3 text-sm text-slate-700 bg-white p-3 rounded border border-steel-grey">{deepMatchResult.analysis.recommendation}</p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Resume Upload Tab */}
           <TabsContent value="resume">
             <Card className="border border-steel-grey rounded-sm">
@@ -560,11 +739,45 @@ export default function TalentDashboard() {
                     </div>
                   )}
                 </div>
+
+                {/* Bulk Upload Section */}
+                <div className="mt-8 pt-6 border-t border-steel-grey">
+                  <h3 className="font-heading font-semibold text-blueprint-navy mb-3">Bulk Upload (up to 5 files)</h3>
+                  <div className="border-2 border-dashed border-steel-grey rounded-sm p-6 text-center">
+                    <label className="cursor-pointer">
+                      <span className="text-safety-orange font-medium hover:underline">Choose multiple files</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.docx"
+                        multiple
+                        onChange={handleBulkUpload}
+                        className="hidden"
+                        data-testid="bulk-upload-input"
+                      />
+                    </label>
+                    <p className="text-xs text-slate-400 mt-1">PDF or DOCX, max 5 files</p>
+                  </div>
+                  {bulkUploading && (
+                    <div className="flex items-center gap-2 text-safety-orange mt-3">
+                      <div className="w-5 h-5 border-2 border-safety-orange border-t-transparent rounded-full animate-spin" />
+                      Uploading files...
+                    </div>
+                  )}
+                  {bulkResults && (
+                    <div className="mt-3 space-y-2" data-testid="bulk-results">
+                      <p className="text-sm font-medium">{bulkResults.uploaded} file(s) uploaded</p>
+                      {bulkResults.results.map((r, i) => (
+                        <div key={i} className={`text-sm flex items-center justify-between p-2 rounded ${r.status === 'uploaded' ? 'bg-green-50' : 'bg-red-50'}`}>
+                          <span>{r.filename}</span>
+                          <span>{r.status === 'uploaded' ? `ATS: ${r.ats_score}` : r.reason}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
-
-          {/* Job Matching Tab */}
           <TabsContent value="matching">
             <Card className="border border-steel-grey rounded-sm">
               <CardHeader className="flex flex-row items-center justify-between">

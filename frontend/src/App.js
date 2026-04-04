@@ -15,6 +15,10 @@ import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import CompaniesPage from "./pages/CompaniesPage";
 import CompanyDetailPage from "./pages/CompanyDetailPage";
 import MessagesPage from "./pages/MessagesPage";
+import LeaderboardPage from "./pages/LeaderboardPage";
+import ResumeTemplatesPage from "./pages/ResumeTemplatesPage";
+import InterviewsPage from "./pages/InterviewsPage";
+import AdminDashboard from "./pages/AdminDashboard";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import "./App.css";
 
@@ -67,6 +71,8 @@ function AppRouter() {
       <Route path="/payment/success" element={<PaymentSuccessPage />} />
       <Route path="/companies" element={<CompaniesPage />} />
       <Route path="/companies/:userId" element={<CompanyDetailPage />} />
+      <Route path="/leaderboard" element={<LeaderboardPage />} />
+      <Route path="/resume-templates" element={<ResumeTemplatesPage />} />
       <Route path="/jobs" element={<JobsPage />} />
       <Route path="/jobs/:jobId" element={<JobDetailPage />} />
       <Route 
@@ -98,6 +104,22 @@ function AppRouter() {
         element={
           <ProtectedRoute>
             <MessagesPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/interviews" 
+        element={
+          <ProtectedRoute>
+            <InterviewsPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin" 
+        element={
+          <ProtectedRoute>
+            <AdminDashboard />
           </ProtectedRoute>
         } 
       />
