@@ -4,6 +4,9 @@
 .idea/
 .vscode/
 
+# vexp local daemon/index state
+.vexp/
+
 # Dependencies
 node_modules/
 /node_modules
